@@ -8,6 +8,23 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 
+use base64::{engine::general_purpose, Engine as _};
+use hmac::{Hmac, Mac, KeyInit};
+use sha2::Sha512;
+use reqwest::Client;
+
+type HmacSha512 = Hmac<Sha512>;
+
+fn generate_signature(public_key: &str, secret_key: &str, request_body: &str) -> String {
+    let payload = format!("{}{}{}", public_key, request_body, public_key);
+    let mut mac = HmacSha512::new_from_slice(secret_key.as_bytes())
+        .expect("HMAC can take key of any size");
+    mac.update(payload.as_bytes());
+    let result = mac.finalize();
+    let hex_str = hex::encode(result.into_bytes());
+    general_purpose::STANDARD.encode(hex_str)
+}
+
 fn main() {
     let tunnel_state = TunnelState(Arc::new(Mutex::new(None)));
 
@@ -34,7 +51,10 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             start_local_tunnel,
-            stop_local_tunnel
+            stop_local_tunnel,
+            get_solidgate_webhooks,
+            create_solidgate_webhook,
+            update_solidgate_webhook
         ])
         // Lifecycle Hook: Crucial for Ubuntu so 'tmole' processes don't become zombies
         .on_window_event(|window, event| {
@@ -59,6 +79,77 @@ async fn handle_webhook(State(app): State<AppHandle>, body: String) -> &'static 
     println!("Received Solidgate Webhook: {}", body);
     let _ = app.emit("webhook-received", &body);
     "OK"
+}
+
+#[tauri::command]
+async fn get_solidgate_webhooks(
+    public_key: String,
+    secret_key: String,
+) -> Result<String, String> {
+    let url = "https://api.solidgate.com/api/v1/webhooks/endpoints";
+    let body = ""; 
+    let signature = generate_signature(&public_key, &secret_key, body);
+
+    let client = Client::new();
+    let res = client
+        .get(url)
+        .header("merchant", public_key)
+        .header("signature", signature)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    Ok(text)
+}
+
+#[tauri::command]
+async fn create_solidgate_webhook(
+    public_key: String,
+    secret_key: String,
+    payload_json: String,
+) -> Result<String, String> {
+    let url = "https://api.solidgate.com/api/v1/webhooks/endpoints";
+    let signature = generate_signature(&public_key, &secret_key, &payload_json);
+
+    let client = Client::new();
+    let res = client
+        .post(url)
+        .header("content-type", "application/json")
+        .header("merchant", public_key)
+        .header("signature", signature)
+        .body(payload_json)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    Ok(text)
+}
+
+#[tauri::command]
+async fn update_solidgate_webhook(
+    public_key: String,
+    secret_key: String,
+    webhook_id: String,
+    payload_json: String,
+) -> Result<String, String> {
+    let url = format!("https://api.solidgate.com/api/v1/webhooks/endpoints/{}", webhook_id);
+    let signature = generate_signature(&public_key, &secret_key, &payload_json);
+
+    let client = Client::new();
+    let res = client
+        .patch(&url)
+        .header("content-type", "application/json")
+        .header("merchant", public_key)
+        .header("signature", signature)
+        .body(payload_json)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    Ok(text)
 }
 
 #[tauri::command]
@@ -129,8 +220,8 @@ async fn start_local_tunnel(
         }
     });
 
-    // Return the full webhook URL string back to the UI
-    Ok(format!("{}/webhook", generated_url))
+    // Return the raw webhook URL string back to the UI
+    Ok(generated_url)
 }
 
 #[tauri::command]
