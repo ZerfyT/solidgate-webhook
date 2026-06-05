@@ -167,7 +167,7 @@ function App() {
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-800 border border-white/10 rounded-xl p-6 w-full max-w-lg flex flex-col gap-4 shadow-2xl">
+          <div className="bg-slate-800 border border-white/10 rounded-lg p-6 w-full max-w-xl flex flex-col gap-2 shadow-2xl">
             <h2 className="text-2xl font-bold text-white mb-2">Solidgate API Settings</h2>
 
             <div className="flex flex-col gap-1">
@@ -193,14 +193,14 @@ function App() {
             <div className="flex flex-col gap-1">
               <div className="flex justify-between items-end mb-1">
                 <label className="text-sm text-slate-400">Target Webhook to Update</label>
-                <button onClick={fetchWebhooks} disabled={fetchingWebhooks} className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded hover:bg-blue-500/30">
+                <button onClick={fetchWebhooks} disabled={fetchingWebhooks} className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded hover:bg-blue-500/30 cursor-pointer">
                   {fetchingWebhooks ? 'Fetching...' : 'Refresh List'}
                 </button>
               </div>
               <select
                 value={sgSelectedWebhookId}
                 onChange={e => setSgSelectedWebhookId(e.target.value)}
-                className="p-2 rounded bg-slate-900 border border-white/10 text-white w-full"
+                className="p-2 rounded bg-slate-900 border border-white/10 text-white w-full appearance-none cursor-pointer "
               >
                 <option value="CREATE_NEW">+ Create New Webhook</option>
                 {availableWebhooks.map(wh => (
@@ -211,24 +211,24 @@ function App() {
               </select>
             </div>
 
-            <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setShowSettings(false)} className="px-4 py-2 rounded text-slate-300 hover:bg-white/10">Cancel</button>
-              <button onClick={saveSettings} className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-400 font-semibold">Save Settings</button>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowSettings(false)} className="px-4 py-2 rounded text-slate-300 hover:bg-white/10 cursor-pointer">Cancel</button>
+              <button onClick={saveSettings} className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-400 font-semibold cursor-pointer">Save Settings</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-3xl p-4 sm:p-8 flex flex-col gap-8 min-h-screen">
+      <div className="w-full max-w-4xl p-2 flex flex-col gap-4 min-h-screen">
         <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">Solidgate Tunnel</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent py-1">Solidgate Tunnel</h1>
           <p className="text-slate-400 text-base">Secure localhost exposure for webhooks</p>
         </div>
 
-        <div className="bg-slate-800/70 backdrop-blur-md border border-white/10 rounded-xl p-8 flex justify-center items-center shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3)]">
+        <div className="bg-slate-800/70 backdrop-blur-md border border-white/10 rounded-lg p-4 flex justify-center items-center shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3)]">
           {!webhookUrl ? (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 w-full justify-center">
-              <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full justify-center">
+              <div className="flex flex-row items-center gap-2">
                 <label htmlFor="portInput" className="text-sm text-slate-400 font-medium">Local Port:</label>
                 <input
                   id="portInput"
@@ -241,7 +241,7 @@ function App() {
                 />
               </div>
               <button
-                className={`px-8 py-3 text-base font-semibold rounded-lg cursor-pointer transition-all inline-flex items-center justify-center h-[46px] bg-blue-500 text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] hover:bg-blue-400 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none ${loading ? 'opacity-70 cursor-not-allowed transform-none' : ''}`}
+                className={`px-8 py-3 text-base font-semibold rounded-lg cursor-pointer transition-all inline-flex items-center justify-center bg-blue-500 text-white shadow-[0_4px_14px_0_rgba(59,130,246,0.39)] hover:bg-blue-400 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none ${loading ? 'opacity-70 cursor-not-allowed transform-none' : ''}`}
                 onClick={handleStartTunnel}
                 disabled={loading || !localPort}
               >
@@ -249,7 +249,7 @@ function App() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-6 w-full">
+            <div className="flex flex-col items-center gap-4 w-full">
               <div className="flex flex-col items-center gap-2 w-full">
                 <span className="text-sm text-slate-400 uppercase tracking-wider">Live URL (Port {localPort}):</span>
                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
@@ -270,7 +270,7 @@ function App() {
                 </div>
               </div>
               <button
-                className={`px-8 py-3 text-base font-semibold rounded-lg cursor-pointer transition-all inline-flex items-center justify-center h-[46px] bg-red-500 text-white shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] hover:bg-red-400 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none ${loading ? 'opacity-70 cursor-not-allowed transform-none' : ''}`}
+                className={`px-8 py-3 text-base font-semibold rounded-lg cursor-pointer transition-all inline-flex items-center justify-center bg-red-500 text-white shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] hover:bg-red-400 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none ${loading ? 'opacity-70 cursor-not-allowed transform-none' : ''}`}
                 onClick={handleStopTunnel}
                 disabled={loading}
               >
@@ -280,8 +280,8 @@ function App() {
           )}
         </div>
 
-        <div className="flex-grow bg-[#020617] rounded-xl border border-white/10 flex flex-col overflow-hidden shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5)] mb-8">
-          <div className="bg-slate-800 px-4 py-3 flex items-center border-b border-white/5">
+        <div className="flex-grow bg-[#020617] rounded-lg border border-white/10 flex flex-col overflow-hidden shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5)] mb-8">
+          <div className="bg-slate-800 px-4 py-2 flex items-center border-b border-white/5">
             <div className="flex gap-1.5">
               <span className="w-3 h-3 rounded-full bg-[#ff5f56]"></span>
               <span className="w-3 h-3 rounded-full bg-[#ffbd2e]"></span>
@@ -289,7 +289,7 @@ function App() {
             </div>
             <span className="mx-auto text-slate-400 text-sm font-mono">Terminal Logs</span>
           </div>
-          <div className="p-4 overflow-y-auto h-[calc(100vh-200px)] flex-grow font-mono text-sm leading-relaxed terminal-body">
+          <div className="p-1 overflow-y-auto h-[calc(100vh-280px)] flex-grow font-mono text-sm leading-relaxed terminal-body">
             {logs.length === 0 ? (
               <div className="text-slate-400 italic text-center mt-8">No logs yet. Start the tunnel to see activity.</div>
             ) : (
