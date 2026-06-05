@@ -10,12 +10,26 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [copied, setCopied] = useState(false);
 
+  const webhookEvents = [
+    'card_gate.order.updated',
+    'card_gate.chargeback.received',
+    'card.network_token.created',
+    'card.network_token.updated',
+    'card_gate.fraud_alert.received',
+    'alt_gate.order.updated',
+    'alt_gate.paypal_dispute.received',
+    'card_gate.prevention_alert.received',
+    // 'alt_gate.recurring_token.cancelled',
+    'subscription.updated.v2',
+    'taxer.tax.calculated'
+  ];
+
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
   const [sgPublicKey, setSgPublicKey] = useState(localStorage.getItem('sgPublicKey') || '');
   const [sgSecretKey, setSgSecretKey] = useState(localStorage.getItem('sgSecretKey') || '');
   const [sgWebhookSuffix, setSgWebhookSuffix] = useState(localStorage.getItem('sgWebhookSuffix') || '/webhook-solidgate');
-  const [sgEventTypes, setSgEventTypes] = useState(localStorage.getItem('sgEventTypes') || 'card_gate.order.updated, card_gate.chargeback.received, card_gate.fraud_alert.received');
+  const [sgEventTypes, setSgEventTypes] = useState(localStorage.getItem('sgEventTypes') || webhookEvents.join(', '));
   const [sgSelectedWebhookId, setSgSelectedWebhookId] = useState(localStorage.getItem('sgSelectedWebhookId') || 'CREATE_NEW');
   const [availableWebhooks, setAvailableWebhooks] = useState([]);
   const [fetchingWebhooks, setFetchingWebhooks] = useState(false);
