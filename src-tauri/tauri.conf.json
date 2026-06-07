@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "solidgate-webhook",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.nipun.solidgate-webhook",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "solidgate-webhook",
+        "title": "Solidgate Webhook",
         "width": 800,
-        "height": 600
+        "height": 800
       }
     ],
     "security": {
