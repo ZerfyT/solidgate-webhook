@@ -2,7 +2,11 @@
 
 A powerful, sleek Tauri desktop application designed to streamline testing and integrating Solidgate Webhooks. It acts as a UI wrapper around the [Tunnelmole](https://tunnelmole.com/) CLI to instantly expose your localhost to the internet, while natively syncing the generated URLs with your Solidgate API dashboard.
 
-![App Preview](https://via.placeholder.com/800x500.png?text=Solidgate+Webhook+Tunnel+UI) *(Replace with actual screenshot)*
+<div align="center">
+  <img src="./public/screenshot-2.png" width="60%" alt="Solidgate Webhook Tunnel"/>
+
+  <img src="./public/screenshot-1.png" width="60%" alt="Solidgate Webhook Tunnel"/>
+</div>
 
 ## Features
 
@@ -18,24 +22,29 @@ A powerful, sleek Tauri desktop application designed to streamline testing and i
 - **Bun** (for frontend dependencies)
 - **Rust / Cargo** (for the Tauri backend)
 - **Tunnelmole CLI:** Ensure the `tmole` command is installed and available in your system `PATH`.
+
   ```bash
-  npm install -g tunnelmole
+  bun install -g tunnelmole
   ```
 
 ## Getting Started
 
 ### 1. Install Dependencies
+
 ```bash
 bun install
 ```
 
 ### 2. Run the App in Development Mode
+
 ```bash
 bun run tauri dev
 ```
+
 This command starts the Vite development server and launches the Tauri desktop application.
 
 ### 3. Build for Production
+
 ```bash
 bun run tauri build
 ```
@@ -57,4 +66,5 @@ The app will generate the tunnel, append your configured URL suffix (e.g., `/web
 - **Cryptography:** `hmac`, `sha2`, `base64` (for Solidgate API Request Signatures)
 
 ## License
-MIT License.
+
+This project is open source and available under the [MIT License](LICENSE).
