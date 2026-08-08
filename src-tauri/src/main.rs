@@ -28,6 +28,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             tunnel::start_local_tunnel,
             tunnel::stop_local_tunnel,
+            tunnel::check_tunnelmole,
+            tunnel::install_tunnelmole,
             solidgate::get_solidgate_webhooks,
             solidgate::create_solidgate_webhook,
             solidgate::update_solidgate_webhook

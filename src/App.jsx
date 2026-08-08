@@ -5,6 +5,7 @@ import "./App.css";
 import { STORAGE_KEYS, DEFAULT_SETTINGS } from "./constants";
 import SettingsModal from "./components/settings-modal";
 import { TerminalLog } from "./components/terminal-log";
+import InstallModal from "./components/install-modal";
 import { useSettings } from "./hooks/use-settings";
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [availableWebhooks, setAvailableWebhooks] = useState([]);
   const [fetchingWebhooks, setFetchingWebhooks] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   const logsEndRef = useRef(null);
 
@@ -105,6 +107,13 @@ function App() {
     setLoading(true);
     setLogs([]); // Clear logs on start
     try {
+      const isInstalled = await invoke("check_tunnelmole");
+      if (!isInstalled) {
+        setLoading(false);
+        setShowInstallModal(true);
+        return;
+      }
+
       const baseUrl = await invoke("start_local_tunnel", { localPort });
       const completeUrl = `${baseUrl}${settings.webhookSuffix}`;
       setWebhookUrl(completeUrl);
@@ -188,6 +197,41 @@ function App() {
         { id: Date.now(), type: "error", content: `Error: ${err}` },
       ]);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstallTunnelmole = async () => {
+    setShowInstallModal(false);
+    setLoading(true);
+    setLogs([
+      {
+        id: Date.now(),
+        type: "system",
+        content: "Starting Tunnelmole installation...",
+      },
+    ]);
+
+    try {
+      await invoke("install_tunnelmole");
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: "system",
+          content: "Installation complete. Starting tunnel automatically...",
+        },
+      ]);
+      // Wait a moment then automatically start tunnel
+      setTimeout(() => {
+        handleStartTunnel();
+      }, 500);
+    } catch (err) {
+      console.error("Installation failed:", err);
+      setLogs((prev) => [
+        ...prev,
+        { id: Date.now(), type: "error", content: `Installation Error: ${err}` },
+      ]);
       setLoading(false);
     }
   };
@@ -387,6 +431,14 @@ function App() {
             </div>
           )}
         </div>
+
+      {/* Install Modal */}
+      {showInstallModal && (
+        <InstallModal
+          onCancel={() => setShowInstallModal(false)}
+          onInstall={handleInstallTunnelmole}
+        />
+      )}
 
         {/* Logs Section */}
         <TerminalLog logs={logs} logsEndRef={logsEndRef} />

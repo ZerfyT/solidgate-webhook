@@ -89,3 +89,59 @@ pub async fn stop_local_tunnel(state: tauri::State<'_, TunnelState>) -> Result<(
     }
     Ok(())
 }
+
+#[tauri::command]
+pub async fn check_tunnelmole() -> bool {
+    Command::new("tmole").arg("--version").output().is_ok()
+}
+
+#[tauri::command]
+pub async fn install_tunnelmole(app: AppHandle) -> Result<(), String> {
+    let mut child = Command::new("bash")
+        .arg("tunnelmole-install.sh")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn install script: {}", e))?;
+
+    let stdout = child.stdout.take().ok_or("Failed to open stdout pipe")?;
+    let stderr = child.stderr.take().ok_or("Failed to open stderr pipe")?;
+
+    let mut reader = BufReader::new(stdout);
+    let mut err_reader = BufReader::new(stderr);
+
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        let mut line_str = String::new();
+        while reader.read_line(&mut line_str).unwrap_or(0) > 0 {
+            let trimmed = line_str.trim();
+            if !trimmed.is_empty() {
+                let _ = app_clone.emit("tunnel-log", trimmed.to_string());
+            }
+            line_str.clear();
+        }
+    });
+
+    let app_clone2 = app.clone();
+    std::thread::spawn(move || {
+        let mut line_str = String::new();
+        while err_reader.read_line(&mut line_str).unwrap_or(0) > 0 {
+            let trimmed = line_str.trim();
+            if !trimmed.is_empty() {
+                let _ = app_clone2.emit("tunnel-log", format!("ERROR: {}", trimmed));
+            }
+            line_str.clear();
+        }
+    });
+
+    let status = child
+        .wait()
+        .map_err(|e| format!("Failed to wait on child: {}", e))?;
+
+    if status.success() {
+        let _ = app.emit("tunnel-log", "Tunnelmole installed successfully.");
+        Ok(())
+    } else {
+        Err(format!("Install script failed with status: {}", status))
+    }
+}
