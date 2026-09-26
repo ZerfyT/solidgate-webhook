@@ -13,6 +13,7 @@ fn main() {
     let tunnel_state = TunnelState(Arc::new(Mutex::new(None)));
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(tunnel_state)
         .setup(|app| {
             let app_handle = app.handle().clone();

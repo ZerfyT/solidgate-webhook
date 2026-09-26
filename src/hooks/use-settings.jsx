@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { DEFAULT_SETTINGS, STORAGE_KEYS } from "../constants";
 
-// Custom hook to manage settings
+// Custom hook to manage settings with stable callbacks
 export function useSettings() {
   const [settings, setSettings] = useState(() => ({
     publicKey:
@@ -21,23 +21,40 @@ export function useSettings() {
       DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
   }));
 
-  const updateSetting = (key, value) => {
+  const updateSetting = useCallback((key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const saveSettings = () => {
-    localStorage.setItem(STORAGE_KEYS.SG_PUBLIC_KEY, settings.publicKey);
-    localStorage.setItem(STORAGE_KEYS.SG_SECRET_KEY, settings.secretKey);
+  const saveSettings = useCallback((overrideSettings) => {
+    const target = overrideSettings || settings;
+    localStorage.setItem(STORAGE_KEYS.SG_PUBLIC_KEY, target.publicKey || "");
+    localStorage.setItem(STORAGE_KEYS.SG_SECRET_KEY, target.secretKey || "");
     localStorage.setItem(
       STORAGE_KEYS.SG_WEBHOOK_SUFFIX,
-      settings.webhookSuffix,
+      target.webhookSuffix || DEFAULT_SETTINGS.SG_WEBHOOK_SUFFIX,
     );
-    localStorage.setItem(STORAGE_KEYS.SG_EVENT_TYPES, settings.eventTypes);
+    localStorage.setItem(
+      STORAGE_KEYS.SG_EVENT_TYPES,
+      target.eventTypes || DEFAULT_SETTINGS.SG_EVENT_TYPES,
+    );
     localStorage.setItem(
       STORAGE_KEYS.SG_SELECTED_WEBHOOK_ID,
-      settings.selectedWebhookId,
+      target.selectedWebhookId || DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
     );
-  };
+  }, [settings]);
 
-  return { settings, updateSetting, saveSettings };
+  const clearAllCache = useCallback(() => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      localStorage.removeItem(key);
+    });
+    setSettings({
+      publicKey: DEFAULT_SETTINGS.SG_PUBLIC_KEY,
+      secretKey: DEFAULT_SETTINGS.SG_SECRET_KEY,
+      webhookSuffix: DEFAULT_SETTINGS.SG_WEBHOOK_SUFFIX,
+      eventTypes: DEFAULT_SETTINGS.SG_EVENT_TYPES,
+      selectedWebhookId: DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
+    });
+  }, []);
+
+  return { settings, updateSetting, saveSettings, clearAllCache };
 }
