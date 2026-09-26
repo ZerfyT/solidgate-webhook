@@ -89,3 +89,13 @@ pub async fn stop_local_tunnel(state: tauri::State<'_, TunnelState>) -> Result<(
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn check_tunnelmole() -> bool {
+    Command::new("tmole")
+        .arg("--version")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok()
+}

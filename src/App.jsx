@@ -15,6 +15,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [activeWebhookId, setActiveWebhookId] = useState(null);
+
+  const [tmoleInstalled, setTmoleInstalled] = useState(false);
+  const [solidgateConnected, setSolidgateConnected] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Settings State
   const { settings, updateSetting, saveSettings } = useSettings();
@@ -60,14 +65,72 @@ function App() {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
-  const handleSaveSettings = () => {
-    saveSettings();
-    setShowSettings(false);
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const isInstalled = await invoke("check_tunnelmole");
+        setTmoleInstalled(isInstalled);
+      } catch (e) {
+        setTmoleInstalled(false);
+      }
+
+      if (settings.publicKey && settings.secretKey) {
+        try {
+          const response = await invoke("get_solidgate_webhooks", {
+            publicKey: settings.publicKey,
+            secretKey: settings.secretKey,
+          });
+          const parsed = JSON.parse(response);
+          if (parsed.error || (!parsed.data && !Array.isArray(parsed.data))) {
+            setSolidgateConnected(false);
+          } else {
+            setSolidgateConnected(true);
+          }
+        } catch (e) {
+          setSolidgateConnected(false);
+        }
+      } else {
+        setSolidgateConnected(false);
+      }
+    };
+    checkStatus();
+  }, [settings.publicKey, settings.secretKey]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      saveSettings();
+
+      if (!settings.publicKey || !settings.secretKey) {
+        setSolidgateConnected(false);
+        return;
+      }
+
+      const response = await invoke("get_solidgate_webhooks", {
+        publicKey: settings.publicKey,
+        secretKey: settings.secretKey,
+      });
+      const parsed = JSON.parse(response);
+
+      if (parsed.error || (!parsed.data && !Array.isArray(parsed.data))) {
+        setSolidgateConnected(false);
+      } else {
+        setAvailableWebhooks(parsed.data);
+        setSolidgateConnected(true);
+      }
+    } catch (err) {
+      console.error("Validation failed:", err);
+      setSolidgateConnected(false);
+    } finally {
+      setSavingSettings(false);
+      setShowSettings(false);
+    }
   };
 
-  const fetchWebhooks = async () => {
+  const fetchWebhooks = async (silent = false) => {
     if (!settings.publicKey || !settings.secretKey) {
-      alert("Please enter Public and Secret keys to fetch webhooks.");
+      if (!silent) alert("Please enter Public and Secret keys to fetch webhooks.");
+      setSolidgateConnected(false);
       return;
     }
     setFetchingWebhooks(true);
@@ -79,22 +142,28 @@ function App() {
       const parsed = JSON.parse(response);
       if (parsed.data) {
         setAvailableWebhooks(parsed.data);
-        if (parsed.data.length === 0) {
+
+        const tunnelWebhook = parsed.data.find(wh => wh.url && wh.url.includes('.tunnelmole.net'));
+        if (tunnelWebhook) {
+          updateSetting("selectedWebhookId", tunnelWebhook.id);
+        } else if (parsed.data.length === 0) {
           updateSetting(
             "selectedWebhookId",
             DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
           );
         } else if (
           settings.selectedWebhookId ===
-            DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID &&
+          DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID &&
           !localStorage.getItem(STORAGE_KEYS.SG_SELECTED_WEBHOOK_ID)
         ) {
           updateSetting("selectedWebhookId", parsed.data[0].id);
         }
       }
+      setSolidgateConnected(true);
     } catch (err) {
       console.error("Failed to fetch webhooks:", err);
-      alert(`Error fetching webhooks: ${err}`);
+      if (!silent) alert(`Error fetching webhooks: ${err}`);
+      setSolidgateConnected(false);
     } finally {
       setFetchingWebhooks(false);
     }
@@ -141,11 +210,20 @@ function App() {
             name: "Local Tunnel Webhook",
             status: "active",
           };
-          await invoke("create_solidgate_webhook", {
+          const resStr = await invoke("create_solidgate_webhook", {
             publicKey: settings.publicKey,
             secretKey: settings.secretKey,
             payloadJson: JSON.stringify(payload),
           });
+
+          try {
+            const parsed = JSON.parse(resStr);
+            const newId = parsed?.data?.id || parsed?.id;
+            if (newId) setActiveWebhookId(newId);
+          } catch (e) {
+            console.error("Failed to parse create webhook response:", e);
+          }
+
           setLogs((prev) => [
             ...prev,
             {
@@ -162,6 +240,7 @@ function App() {
             webhookId: settings.selectedWebhookId,
             payloadJson: JSON.stringify(payload),
           });
+          setActiveWebhookId(settings.selectedWebhookId);
           setLogs((prev) => [
             ...prev,
             {
@@ -201,6 +280,23 @@ function App() {
         ...prev,
         { id: Date.now(), type: "system", content: "Tunnel stopped." },
       ]);
+
+      if (settings.publicKey && settings.secretKey && activeWebhookId) {
+        setLogs((prev) => [
+          ...prev,
+          { id: Date.now() + 1, type: "system", content: "Deleting webhook from Solidgate..." },
+        ]);
+        await invoke("delete_solidgate_webhook", {
+          publicKey: settings.publicKey,
+          secretKey: settings.secretKey,
+          webhookId: activeWebhookId
+        });
+        setLogs((prev) => [
+          ...prev,
+          { id: Date.now() + 2, type: "webhook", content: `Solidgate API: Successfully Deleted Webhook ${activeWebhookId}` },
+        ]);
+        setActiveWebhookId(null);
+      }
     } catch (err) {
       console.error("Failed to stop tunnel:", err);
     } finally {
@@ -222,7 +318,7 @@ function App() {
       <button
         onClick={() => {
           setShowSettings(true);
-          fetchWebhooks();
+          fetchWebhooks(true);
         }}
         className="absolute top-4 right-4 bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all border border-white/10 cursor-pointer"
         title="Settings"
@@ -252,6 +348,7 @@ function App() {
           availableWebhooks={availableWebhooks}
           fetchingWebhooks={fetchingWebhooks}
           fetchWebhooks={fetchWebhooks}
+          savingSettings={savingSettings}
         />
       )}
 
@@ -263,6 +360,16 @@ function App() {
           <p className="text-slate-400 text-base mt-2">
             Secure localhost exposure for webhooks
           </p>
+          <div className="flex gap-4 mt-4 justify-center">
+            <div className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50">
+              <div className={`w-2 h-2 rounded-full ${solidgateConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-500'}`}></div>
+              <span>Solidgate API: {solidgateConnected ? 'Connected' : 'Not Connected'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50">
+              <div className={`w-2 h-2 rounded-full ${tmoleInstalled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]'}`}></div>
+              <span>Tunnelmole: {tmoleInstalled ? 'Installed' : 'Not Found'}</span>
+            </div>
+          </div>
         </div>
 
         <div className="bg-slate-800/70 backdrop-blur-md border border-white/10 rounded-xl p-6 flex justify-center items-center shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3)] mt-2">

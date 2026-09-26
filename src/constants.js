@@ -1,15 +1,15 @@
 export const WEBHOOK_EVENTS = [
     'card_gate.order.updated',
     'card_gate.chargeback.received',
-    'card.network_token.created',
-    'card.network_token.updated',
     'card_gate.fraud_alert.received',
+    'card_gate.prevention_alert.received',
+    'subscription.updated.v2',
     'alt_gate.order.updated',
     'alt_gate.paypal_dispute.received',
-    'card_gate.prevention_alert.received',
-    // 'alt_gate.recurring_token.cancelled',    // Not Supported Yet
-    'subscription.updated.v2',
+    'card.network_token.created',
+    'card.network_token.updated',
     'taxer.tax.calculated'
+    // 'alt_gate.recurring_token.cancelled',    // Not Supported Yet
 ];
 
 export const STORAGE_KEYS = {

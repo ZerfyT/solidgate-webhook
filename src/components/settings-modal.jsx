@@ -8,6 +8,7 @@ export default function SettingsModal({
   availableWebhooks,
   fetchingWebhooks,
   fetchWebhooks,
+  savingSettings,
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -158,19 +159,43 @@ export default function SettingsModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-4 pt-2 border-t border-slate-700/50">
+        <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-700/50">
           <button
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors font-medium"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to clear all settings cache?")) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="px-4 py-2 rounded-lg text-red-400 hover:bg-red-500/10 cursor-pointer transition-colors font-medium text-sm border border-transparent hover:border-red-500/30"
           >
-            Cancel
+            Clear Cache
           </button>
-          <button
-            onClick={onSave}
-            className="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-semibold cursor-pointer transition-all shadow-[0_0_15px_-3px_rgba(37,99,235,0.4)] hover:shadow-[0_0_20px_-3px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 active:translate-y-0"
-          >
-            Save Settings
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSave}
+              disabled={savingSettings}
+              className="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-semibold cursor-pointer transition-all shadow-[0_0_15px_-3px_rgba(37,99,235,0.4)] hover:shadow-[0_0_20px_-3px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
+            >
+              {savingSettings ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Validating...
+                </>
+              ) : (
+                "Save Settings"
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

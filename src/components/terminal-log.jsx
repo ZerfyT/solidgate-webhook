@@ -1,6 +1,6 @@
 export function TerminalLog({ logs, logsEndRef }) {
   return (
-    <div className="flex-grow bg-[#0f172a] rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-2xl mb-8 mt-4">
+    <div className="grow bg-[#0f172a] rounded-xl border border-slate-700/50 flex flex-col overflow-hidden shadow-2xl mb-8 mt-4">
       <div className="bg-slate-800/80 px-4 py-3 flex items-center border-b border-slate-700/50 backdrop-blur-sm">
         <div className="flex gap-2">
           <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]"></span>

@@ -87,3 +87,26 @@ pub async fn update_solidgate_webhook(
     let text = res.text().await.map_err(|e| e.to_string())?;
     Ok(text)
 }
+
+#[tauri::command]
+pub async fn delete_solidgate_webhook(
+    public_key: String,
+    secret_key: String,
+    webhook_id: String,
+) -> Result<String, String> {
+    let url = format!("{}/{}", BASE_ENDPOINT_URL, webhook_id);
+    let body = "";
+    let signature = generate_signature(&public_key, &secret_key, body);
+
+    let client = Client::new();
+    let res = client
+        .delete(&url)
+        .header("merchant", public_key)
+        .header("signature", signature)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    Ok(text)
+}
