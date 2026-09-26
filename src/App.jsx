@@ -355,7 +355,7 @@ function App() {
                 Solidgate Webhook Tunnel
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                v0.1
+                v0.2.0
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 leading-none">
