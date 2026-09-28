@@ -22,7 +22,11 @@ export function useSettings() {
   }));
 
   const updateSetting = useCallback((key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSettings((prev) => {
+      const updated = { ...prev, [key]: value };
+      saveSettings(updated);
+      return updated;
+    });
   }, []);
 
   const saveSettings = useCallback((overrideSettings) => {

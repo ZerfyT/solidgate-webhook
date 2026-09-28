@@ -28,3 +28,5 @@ export const DEFAULT_SETTINGS = {
     SG_SELECTED_WEBHOOK_ID: 'CREATE_NEW',
     DEFAULT_LOCAL_PORT: "8000",
 }
+
+export const COMMON_PORTS = ["8000", "3000", "5000", "8080", "4242"];

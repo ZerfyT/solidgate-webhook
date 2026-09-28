@@ -2,14 +2,12 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import "./App.css";
-import { STORAGE_KEYS, DEFAULT_SETTINGS } from "./constants";
+import { STORAGE_KEYS, DEFAULT_SETTINGS, COMMON_PORTS } from "./constants";
 import SettingsModal from "./components/settings-modal";
 import { TerminalLog } from "./components/terminal-log";
 import { useSettings } from "./hooks/use-settings";
 import { useLogStream } from "./hooks/use-log-stream";
 import { useToast } from "./components/ui/toast";
-
-const COMMON_PORTS = ["8000", "3000", "5000", "8080", "4242"];
 
 function App() {
   const [webhookUrl, setWebhookUrl] = useState("");
@@ -59,22 +57,7 @@ function App() {
       }
 
       if (settings.publicKey && settings.secretKey) {
-        try {
-          const response = await invoke("get_solidgate_webhooks", {
-            publicKey: settings.publicKey,
-            secretKey: settings.secretKey,
-          });
-          const parsed = JSON.parse(response);
-          if (isMounted) {
-            if (parsed.error || (!parsed.data && !Array.isArray(parsed.data))) {
-              setSolidgateConnected(false);
-            } else {
-              setSolidgateConnected(true);
-            }
-          }
-        } catch {
-          if (isMounted) setSolidgateConnected(false);
-        }
+        fetchWebhooks(true);
       } else {
         if (isMounted) setSolidgateConnected(false);
       }
@@ -237,17 +220,24 @@ function App() {
           }
         } else {
           const payload = { url: completeUrl };
-          await invoke("update_solidgate_webhook", {
+          const resStr = await invoke("update_solidgate_webhook", {
             publicKey: settings.publicKey,
             secretKey: settings.secretKey,
             webhookId: settings.selectedWebhookId,
             payloadJson: JSON.stringify(payload),
           });
-          setActiveWebhookId(settings.selectedWebhookId);
-          appendLog({
-            type: "webhook",
-            content: `Solidgate API: Successfully updated webhook [ID: ${settings.selectedWebhookId}] to ${completeUrl}`,
-          });
+
+          const parsed = JSON.parse(resStr);
+
+          if (parsed.error || (!parsed.data && !Array.isArray(parsed.data))) {
+            console.error("Failed to update webhook endpoint:", e);
+          } else {
+            setActiveWebhookId(settings.selectedWebhookId);
+            appendLog({
+              type: "webhook",
+              content: `Solidgate API: Successfully updated webhook [ID: ${settings.selectedWebhookId}] to ${completeUrl}`,
+            });
+          }
         }
       } else {
         appendLog({
