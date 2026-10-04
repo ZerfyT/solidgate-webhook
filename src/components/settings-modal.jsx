@@ -63,7 +63,7 @@ function SettingsModalComponent({
   const handleClearCacheClick = () => {
     if (!confirmClearCache) {
       setConfirmClearCache(true);
-      setTimeout(() => setConfirmClearCache(false), 4000);
+      setTimeout(() => setConfirmClearCache(false), 5000);
     } else {
       if (onClearCache) {
         onClearCache();
@@ -270,7 +270,7 @@ function SettingsModalComponent({
             type="button"
             onClick={handleClearCacheClick}
             className={`px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all border ${confirmClearCache
-              ? "bg-rose-600 text-white border-rose-500 animate-pulse"
+              ? "bg-rose-600 text-white border-rose-500"
               : "text-rose-400/90 border-transparent hover:border-rose-500/30 hover:bg-rose-500/10"
               }`}
           >

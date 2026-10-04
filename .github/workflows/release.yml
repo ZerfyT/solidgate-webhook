@@ -1,0 +1,85 @@
+name: 'Publish Release'
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux configuration (Ubuntu x86_64)
+          - platform: 'ubuntu-22.04'
+            args: ''
+            rust-target: 'x86_64-unknown-linux-gnu'
+
+          # macOS configuration (Apple Silicon + Intel universal binary)
+          - platform: 'macos-14'
+            args: '--target universal-apple-darwin'
+            rust-target: 'aarch64-apple-darwin,x86_64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Bun runner environment
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Install Rust toolchain with required compilation targets
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      # Cache Rust dependencies and build artifacts
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: 'src-tauri -> target'
+
+      # Linux system dependencies required by Tauri v2, WebKit, AppImage, and RPM bundling
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libfuse2 \
+            rpm \
+            patchelf
+
+      # Install frontend dependencies using Bun
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # Build the application and generate release bundles
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Solidgate Webhook ${{ github.ref_name }}'
+          releaseBody: 'Automated release generated for ${{ github.ref_name }}.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

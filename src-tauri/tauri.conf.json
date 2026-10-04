@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "solidgate-webhook",
-  "version": "0.2.0",
+  "productName": "Solidgate Webhook",
+  "mainBinaryName": "solidgate-webhook",
+  "version": "0.2.1",
   "identifier": "com.nipun.solidgate-webhook",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -20,13 +21,19 @@
     ],
     "security": {
       "csp": null
-    }
+    },
+    "enableGTKAppId": true
   },
   "bundle": {
     "active": true,
+    "category": "DeveloperTool",
+    "homepage": "https://github.com/ZerfyT/solidgate-webhook",
     "targets": [
       "deb",
-      "rpm"
+      "rpm",
+      "appimage",
+      "dmg",
+      "app"
     ],
     "icon": [
       "icons/32x32.png",

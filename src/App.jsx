@@ -123,26 +123,26 @@ function App() {
       if (parsed.data) {
         setAvailableWebhooks(parsed.data);
 
-        const tunnelWebhook = parsed.data.find(
-          (wh) => wh.url && wh.url.includes(".tunnelmole.net"),
-        );
-        if (tunnelWebhook) {
-          updateSetting("selectedWebhookId", tunnelWebhook.id);
-        } else if (parsed.data.length === 0) {
-          updateSetting(
-            "selectedWebhookId",
-            DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
-          );
-        } else if (
-          settings.selectedWebhookId ===
-          DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID &&
-          !localStorage.getItem(STORAGE_KEYS.SG_SELECTED_WEBHOOK_ID)
-        ) {
-          updateSetting("selectedWebhookId", parsed.data[0].id);
-        }
-        if (!silent) {
-          addToast(`Loaded ${parsed.data.length} webhooks from Solidgate`, "success");
-        }
+        // const tunnelWebhook = parsed.data.find(
+        //   (wh) => wh.url && wh.url.includes(".tunnelmole.net"),
+        // );
+        // if (tunnelWebhook) {
+        //   updateSetting("selectedWebhookId", tunnelWebhook.id);
+        // } else if (parsed.data.length === 0) {
+        //   updateSetting(
+        //     "selectedWebhookId",
+        //     DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID,
+        //   );
+        // } else if (
+        //   settings.selectedWebhookId ===
+        //   DEFAULT_SETTINGS.SG_SELECTED_WEBHOOK_ID &&
+        //   !localStorage.getItem(STORAGE_KEYS.SG_SELECTED_WEBHOOK_ID)
+        // ) {
+        //   updateSetting("selectedWebhookId", parsed.data[0].id);
+        // }
+        // if (!silent) {
+        //   addToast(`Loaded ${parsed.data.length} webhooks from Solidgate`, "success");
+        // }
       }
       setSolidgateConnected(true);
     } catch (err) {
@@ -219,7 +219,7 @@ function App() {
             console.error("Failed to parse create webhook response:", e);
           }
         } else {
-          const payload = { url: completeUrl };
+          const payload = { url: completeUrl, status: "active" };
           const resStr = await invoke("update_solidgate_webhook", {
             publicKey: settings.publicKey,
             secretKey: settings.secretKey,
@@ -229,8 +229,9 @@ function App() {
 
           const parsed = JSON.parse(resStr);
 
-          if (parsed.error || (!parsed.data && !Array.isArray(parsed.data))) {
-            console.error("Failed to update webhook endpoint:", e);
+          if (parsed.error) {
+            addToast(`Failed to update webhook endpoint: error:${parsed.error.code} - ${parsed.error.message}`);
+            console.error("Failed to update webhook endpoint:", parsed.error);
           } else {
             setActiveWebhookId(settings.selectedWebhookId);
             appendLog({
@@ -345,7 +346,7 @@ function App() {
                 Solidgate Webhook Tunnel
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                v0.2.0
+                {`v${__APP_VERSION__}`}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 leading-none">
