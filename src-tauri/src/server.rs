@@ -1,14 +1,9 @@
 use axum::{
-    body::Bytes,
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
-    Router,
+    Router, body::Bytes, extract::State, http::StatusCode, response::IntoResponse, routing::get,
 };
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
-use tokio::sync::{oneshot, Mutex};
+use tokio::sync::{Mutex, oneshot};
 
 pub struct ServerState(pub Arc<Mutex<Option<oneshot::Sender<()>>>>);
 

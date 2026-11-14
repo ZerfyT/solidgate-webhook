@@ -55,11 +55,38 @@ export function useLogStream() {
   }, []);
 
   useEffect(() => {
-    // Listen for Tunnelmole logs
+    // Listen for Tunnelmole logs and categorize errors/system messages
     const unlistenTunnel = listen("tunnel-log", (event) => {
+      let type = "tunnel";
+      let content = event.payload;
+
+      if (typeof content === "object" && content !== null) {
+        type = content.type || "tunnel";
+        content = content.content || "";
+      } else if (typeof content === "string") {
+        const lower = content.toLowerCase();
+        if (
+          content.startsWith("[ERROR]") ||
+          lower.includes("error:") ||
+          lower.includes("failed to") ||
+          lower.includes("rate limit") ||
+          lower.includes("limited to") ||
+          lower.includes("exception:") ||
+          lower.includes("fatal:")
+        ) {
+          type = "error";
+        } else if (
+          content.startsWith("[SYSTEM]") ||
+          lower.includes("refreshing session") ||
+          lower.includes("retrying")
+        ) {
+          type = "system";
+        }
+      }
+
       appendLog({
-        type: "tunnel",
-        content: event.payload,
+        type,
+        content,
       });
     });
 

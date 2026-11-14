@@ -1,3 +1,4 @@
+pub mod secure_store;
 pub mod server;
 pub mod solidgate;
 pub mod tunnel;
@@ -18,6 +19,7 @@ pub fn run() {
     let server_state_arc = server_state.0.clone();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_keyring::init())
         .plugin(tauri_plugin_opener::init())
         .manage(tunnel_state)
         .manage(server_state)
@@ -37,7 +39,10 @@ pub fn run() {
             solidgate::get_solidgate_webhooks,
             solidgate::create_solidgate_webhook,
             solidgate::update_solidgate_webhook,
-            solidgate::delete_solidgate_webhook
+            solidgate::delete_solidgate_webhook,
+            secure_store::save_secret_key,
+            secure_store::get_secret_key,
+            secure_store::delete_secret_key
         ])
         // Lifecycle Hook: Clean up background processes on close or destroy
         .on_window_event(|window, event| match event {

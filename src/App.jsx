@@ -4,6 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import "./App.css";
 import { DEFAULT_SETTINGS } from "./constants";
 import SettingsModal from "./components/settings-modal";
+import { HelpModal } from "./components/help-modal";
 import { TerminalLog } from "./components/terminal-log";
 import { TunnelControl } from "./components/tunnel-control";
 import { useSettings } from "./hooks/use-settings";
@@ -26,6 +27,7 @@ function App() {
   // Settings State
   const { settings, updateSetting, saveSettings, clearAllCache } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [availableWebhooks, setAvailableWebhooks] = useState([]);
   const [fetchingWebhooks, setFetchingWebhooks] = useState(false);
 
@@ -33,12 +35,21 @@ function App() {
   const { logs, appendLog, clearLogs } = useLogStream();
   const { addToast } = useToast();
 
-  // Keyboard shortcut: Ctrl+, or Cmd+, to toggle Settings
+  // Keyboard shortcuts: Ctrl+, (Settings), Ctrl+H / Shift+? (Help)
   useEffect(() => {
     const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isInput = tag === "input" || tag === "textarea" || tag === "select";
+
       if ((e.metaKey || e.ctrlKey) && e.key === ",") {
         e.preventDefault();
         setShowSettings((prev) => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        setShowHelp((prev) => !prev);
+      } else if (e.key === "?" && !isInput && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setShowHelp((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -405,6 +416,28 @@ function App() {
             </span>
           </div>
 
+          {/* Help Modal Button */}
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60 transition-all cursor-pointer shadow-sm flex items-center justify-center group"
+            title="Help & Info (Shift+? or ⌘H)"
+            aria-label="Open help and documentation"
+          >
+            <svg
+              className="w-4 h-4 group-hover:scale-110 transition-transform duration-200"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </button>
+
           {/* Settings Modal Button */}
           <button
             onClick={() => {
@@ -413,6 +446,7 @@ function App() {
             }}
             className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60 transition-all cursor-pointer shadow-sm flex items-center justify-center group"
             title="Settings (⌘,)"
+            aria-label="Open settings"
           >
             <svg
               className="w-4 h-4 group-hover:rotate-45 transition-transform duration-300"
@@ -469,6 +503,9 @@ function App() {
           onClearCache={handleClearCache}
         />
       )}
+
+      {/* Help & Info Modal */}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

@@ -191,7 +191,7 @@ function SettingsModalComponent({
               onChange={(e) => updateSetting("secretKey", e.target.value)}
               inputType="password"
               placeholder="sk_..."
-              helperText="Your Solidgate Merchant Secret Key (kept securely in local storage)"
+              helperText="Your Solidgate Merchant Secret Key (stored securely in OS Keychain / Keyring)"
             />
           </div>
 
