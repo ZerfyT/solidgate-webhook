@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import TextInput from "./ui/text-input.jsx";
 import { WEBHOOK_EVENTS } from "../constants.js";
 
@@ -14,18 +14,59 @@ function SettingsModalComponent({
   onClearCache,
 }) {
   const [confirmClearCache, setConfirmClearCache] = useState(false);
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
-  // Close on Escape, Save on Ctrl/Cmd+Enter
+  // Focus management & accessible keyboard trap
   useEffect(() => {
+    previousFocusRef.current = document.activeElement;
+
+    // Focus the first interactive element upon opening
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstInput = modalRef.current.querySelector(
+          'input:not([disabled]), button:not([disabled]), select:not([disabled])',
+        );
+        firstInput?.focus();
+      }
+    }, 50);
+
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
       } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         onSave();
+      } else if (e.key === "Tab") {
+        if (!modalRef.current) return;
+        const focusable = modalRef.current.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [onClose, onSave]);
 
   // Parse currently active events
@@ -75,8 +116,16 @@ function SettingsModalComponent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900/95 border border-slate-700/70 rounded-2xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-modal-title"
+    >
+      <div
+        ref={modalRef}
+        className="bg-slate-900/95 border border-slate-700/70 rounded-2xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]"
+      >
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-950/40">
           <div className="flex items-center gap-3">
@@ -87,7 +136,7 @@ function SettingsModalComponent({
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <h2 id="settings-modal-title" className="text-lg font-bold text-white tracking-tight">
                 Solidgate API Settings
               </h2>
               <p className="text-xs text-slate-400">
@@ -100,8 +149,9 @@ function SettingsModalComponent({
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer"
             title="Close (Esc)"
+            aria-label="Close settings modal"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>

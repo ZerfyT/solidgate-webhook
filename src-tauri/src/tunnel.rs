@@ -1,21 +1,42 @@
 use regex::Regex;
 use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 use tauri::{AppHandle, Emitter};
+
+use crate::server::ServerState;
+
+static URL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"https://[a-zA-Z0-9-]+\.tunnelmole\.net").expect("Valid regex")
+});
 
 // A global reference to keep track of the active tunnel process so we can terminate it later
 pub struct TunnelState(pub Arc<Mutex<Option<Child>>>);
+
+impl TunnelState {
+    pub fn new() -> Self {
+        Self(Arc::new(Mutex::new(None)))
+    }
+}
 
 #[tauri::command]
 pub async fn start_local_tunnel(
     app: AppHandle,
     state: tauri::State<'_, TunnelState>,
+    server_state: tauri::State<'_, ServerState>,
     local_port: String,
 ) -> Result<String, String> {
+    // If the port changed, start/bind the embedded server for this port
+    let server_arc = server_state.0.clone();
+    let app_handle_for_server = app.clone();
+    let port_for_server = local_port.clone();
+    tauri::async_runtime::spawn(async move {
+        crate::server::start_server(app_handle_for_server, server_arc, port_for_server).await;
+    });
+
     // Spawn Tunnelmole CLI as a child process
     let mut child = Command::new("tmole")
-        .arg(local_port)
+        .arg(&local_port)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -33,27 +54,25 @@ pub async fn start_local_tunnel(
         .ok_or("Failed to open Tunnelmole stdout pipe")?;
     let mut reader = BufReader::new(stdout);
 
-    // Pattern to catch Tunnelmole's generated public HTTPS link
-    let url_regex = Regex::new(r"https://[a-zA-Z0-9-]+\.tunnelmole\.net").unwrap();
-    let mut generated_url = String::new();
-
-    // Store the child handle globally so we can kill it when the app shuts down
+    // Store the child handle globally so we can kill it when stopped or shut down
     if let Ok(mut guard) = state.0.lock() {
         *guard = Some(child);
     }
+
+    let mut generated_url = String::new();
 
     // Parse lines until the URL is found
     let mut line_str = String::new();
     while reader.read_line(&mut line_str).unwrap_or(0) > 0 {
         let trimmed = line_str.trim();
-        println!("[Tunnelmole Log]: {}", trimmed); // Helpful for local debugging
+        println!("[Tunnelmole Log]: {}", trimmed);
         if !trimmed.is_empty() {
             let _ = app.emit("tunnel-log", trimmed.to_string());
         }
-        if let Some(mat) = url_regex.find(trimmed) {
+        if let Some(mat) = URL_REGEX.find(trimmed) {
             generated_url = mat.as_str().to_string();
             line_str.clear();
-            break; // Found it! Stop blocking and return the URL
+            break;
         }
         line_str.clear();
     }
@@ -62,9 +81,9 @@ pub async fn start_local_tunnel(
         return Err("Tunnelmole started but failed to return a valid public URL.".to_string());
     }
 
-    // Stream remaining logs
+    // Stream remaining logs using Tokio blocking pool (staying in runtime thread model)
     let app_clone = app.clone();
-    std::thread::spawn(move || {
+    tauri::async_runtime::spawn_blocking(move || {
         let mut line_str = String::new();
         while reader.read_line(&mut line_str).unwrap_or(0) > 0 {
             let trimmed = line_str.trim();
@@ -75,7 +94,6 @@ pub async fn start_local_tunnel(
         }
     });
 
-    // Return the raw webhook URL string back to the UI
     Ok(generated_url)
 }
 
@@ -85,6 +103,7 @@ pub async fn stop_local_tunnel(state: tauri::State<'_, TunnelState>) -> Result<(
         if let Some(mut child) = guard.take() {
             println!("Stopping background Tunnelmole process cleanly...");
             let _ = child.kill();
+            let _ = child.wait();
         }
     }
     Ok(())

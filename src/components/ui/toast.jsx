@@ -21,10 +21,15 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="fixed bottom-5 right-5 z-100 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4">
+      <div
+        className="fixed bottom-5 right-5 z-100 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            role={toast.type === "error" ? "alert" : "status"}
             className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl border backdrop-blur-xl shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${toast.type === "success"
               ? "bg-slate-900/90 border-emerald-500/40 text-emerald-300 shadow-[0_0_20px_-3px_rgba(16,185,129,0.3)]"
               : toast.type === "error"
@@ -54,6 +59,7 @@ export function ToastProvider({ children }) {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
+              aria-label="Dismiss notification"
               className="text-slate-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10 shrink-0 cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

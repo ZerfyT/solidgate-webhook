@@ -7,7 +7,7 @@ export function useLogStream() {
   const [logs, setLogs] = useState([]);
   const bufferRef = useRef([]);
   const rafIdRef = useRef(null);
-  let idCounter = useRef(0);
+  const idCounter = useRef(0);
 
   const flushBuffer = useCallback(() => {
     if (bufferRef.current.length === 0) {

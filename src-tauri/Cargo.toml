@@ -34,7 +34,6 @@ base64 = "0.22.1"
 [profile.dev]   # Default Values
 opt-level = 0
 debug = true
-split-debuginfo = '...'  # Platform-specific.
 strip = "none"
 debug-assertions = true
 overflow-checks = true
@@ -47,7 +46,6 @@ rpath = false
 [profile.release]   # Default Values
 opt-level = 3
 debug = false
-split-debuginfo = '...'  # Platform-specific.
 strip = "none"
 debug-assertions = false
 overflow-checks = false

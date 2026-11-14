@@ -1,6 +1,6 @@
 import { memo, useState, useMemo, useRef, useEffect, useCallback } from "react";
 
-// Memoized individual log line for extreme performance
+// Memoized individual log line with content-visibility auto for virtual-like rendering performance
 const LogItem = memo(function LogItem({ log }) {
   const badgeConfig = useMemo(() => {
     switch (log.type) {
@@ -33,7 +33,10 @@ const LogItem = memo(function LogItem({ log }) {
   }, [log.type]);
 
   return (
-    <div className="group flex items-start gap-2.5 py-1 px-2.5 rounded-md hover:bg-slate-800/40 transition-colors font-mono text-[13px] leading-relaxed break-all">
+    <div
+      className="group flex items-start gap-2.5 py-1 px-2.5 rounded-md hover:bg-slate-800/40 transition-colors font-mono text-[13px] leading-relaxed break-all"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "0 28px" }}
+    >
       <span className="text-slate-500 select-none shrink-0 text-xs mt-0.5">
         [{log.timestamp || new Date(typeof log.id === "number" ? log.id : Date.now()).toLocaleTimeString()}]
       </span>
@@ -57,7 +60,7 @@ function TerminalLogComponent({ logs = [], onClearLogs, onCopyLogs }) {
 
   const containerRef = useRef(null);
 
-  // Compute counts efficiently
+  // Compute counts efficiently in a single pass
   const counts = useMemo(() => {
     let webhook = 0;
     let tunnel = 0;
@@ -88,7 +91,7 @@ function TerminalLogComponent({ logs = [], onClearLogs, onCopyLogs }) {
     return list;
   }, [logs, filterType, searchQuery]);
 
-  // High-performance direct scrolling (bypasses layout thrashing smooth scroll)
+  // High-performance direct scrolling
   const scrollToBottom = useCallback((instant = false) => {
     if (containerRef.current) {
       if (instant) {
@@ -256,7 +259,7 @@ function TerminalLogComponent({ logs = [], onClearLogs, onCopyLogs }) {
         ))}
       </div>
 
-      {/* Terminal Body with Virtual/Optimized List */}
+      {/* Terminal Body with Virtualized/Optimized List */}
       <div className="relative flex-1">
         <div
           ref={containerRef}
@@ -291,7 +294,7 @@ function TerminalLogComponent({ logs = [], onClearLogs, onCopyLogs }) {
           )}
         </div>
 
-        {/* Floating jump to bottom pill if user scrolled up */}
+        {/* Floating jump to bottom button if user scrolled up */}
         {!isAtBottom && logs.length > 0 && (
           <button
             onClick={() => scrollToBottom(false)}

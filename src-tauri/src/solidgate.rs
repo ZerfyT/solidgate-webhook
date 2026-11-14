@@ -19,6 +19,7 @@ fn generate_signature(public_key: &str, secret_key: &str, request_body: &str) ->
 
 #[tauri::command]
 pub async fn get_solidgate_webhooks(
+    client: tauri::State<'_, Client>,
     public_key: String,
     secret_key: String,
 ) -> Result<String, String> {
@@ -26,7 +27,6 @@ pub async fn get_solidgate_webhooks(
     let body = "";
     let signature = generate_signature(&public_key, &secret_key, body);
 
-    let client = Client::new();
     let res = client
         .get(url)
         .header("merchant", public_key)
@@ -41,6 +41,7 @@ pub async fn get_solidgate_webhooks(
 
 #[tauri::command]
 pub async fn create_solidgate_webhook(
+    client: tauri::State<'_, Client>,
     public_key: String,
     secret_key: String,
     payload_json: String,
@@ -48,7 +49,6 @@ pub async fn create_solidgate_webhook(
     let url = BASE_ENDPOINT_URL;
     let signature = generate_signature(&public_key, &secret_key, &payload_json);
 
-    let client = Client::new();
     let res = client
         .post(url)
         .header("content-type", "application/json")
@@ -65,6 +65,7 @@ pub async fn create_solidgate_webhook(
 
 #[tauri::command]
 pub async fn update_solidgate_webhook(
+    client: tauri::State<'_, Client>,
     public_key: String,
     secret_key: String,
     webhook_id: String,
@@ -73,7 +74,6 @@ pub async fn update_solidgate_webhook(
     let url = format!("{}/{}", BASE_ENDPOINT_URL, webhook_id);
     let signature = generate_signature(&public_key, &secret_key, &payload_json);
 
-    let client = Client::new();
     let res = client
         .patch(&url)
         .header("content-type", "application/json")
@@ -90,6 +90,7 @@ pub async fn update_solidgate_webhook(
 
 #[tauri::command]
 pub async fn delete_solidgate_webhook(
+    client: tauri::State<'_, Client>,
     public_key: String,
     secret_key: String,
     webhook_id: String,
@@ -98,7 +99,6 @@ pub async fn delete_solidgate_webhook(
     let body = "";
     let signature = generate_signature(&public_key, &secret_key, body);
 
-    let client = Client::new();
     let res = client
         .delete(&url)
         .header("merchant", public_key)

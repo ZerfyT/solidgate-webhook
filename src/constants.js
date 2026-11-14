@@ -8,8 +8,7 @@ export const WEBHOOK_EVENTS = [
     'alt_gate.paypal_dispute.received',
     'card.network_token.created',
     'card.network_token.updated',
-    'taxer.tax.calculated'
-    // 'alt_gate.recurring_token.cancelled',    // Not Supported Yet
+    'taxer.tax.calculated',
 ];
 
 export const STORAGE_KEYS = {
@@ -17,7 +16,7 @@ export const STORAGE_KEYS = {
     SG_SECRET_KEY: 'sgSecretKey',
     SG_WEBHOOK_SUFFIX: 'sgWebhookSuffix',
     SG_EVENT_TYPES: 'sgEventTypes',
-    SG_SELECTED_WEBHOOK_ID: 'sgSelectedWebhookId'
+    SG_SELECTED_WEBHOOK_ID: 'sgSelectedWebhookId',
 };
 
 export const DEFAULT_SETTINGS = {
@@ -27,6 +26,6 @@ export const DEFAULT_SETTINGS = {
     SG_EVENT_TYPES: WEBHOOK_EVENTS.join(', '),
     SG_SELECTED_WEBHOOK_ID: 'CREATE_NEW',
     DEFAULT_LOCAL_PORT: "8000",
-}
+};
 
 export const COMMON_PORTS = ["8000", "3000", "5000", "8080", "4242"];
